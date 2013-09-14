@@ -1,0 +1,52 @@
+#!/bin/bash
+
+if [ "$1" == "" ]
+  then
+    echo "Usage $0 /path/to/mountedUSBDrive"
+    exit 1
+fi
+
+# adding a trailing / here so we don't accidentally start with / later on
+usbpath=$1/
+#check for root
+#look up disk space requirements from usb and check
+#check for mksquashfs and prompt to install squashfs-tools
+#option for making safer by copying from usb 1st to make a backup
+
+cd /var/tmp
+mkdir usblive
+cd usblive
+mkdir readonly readwrite merged
+echo "Mounting ${usbpath}casper/filesystem.squashfs"
+mount ${usbpath}casper/filesystem.squashfs readonly -t squashfs -o loop,ro
+
+echo "Mounting ${usbpath}casper-rw"
+mount ${usbpath}casper-rw readwrite -o loop,rw
+echo "Mounting overlayfs"
+mount none merged -o lowerdir=readonly,upperdir=readwrite -t overlayfs
+echo "Making new squashfs"
+mksquashfs merged newfilesystem.squashfs -comp xz
+
+echo "Unmounting merged, casper-rw and old squashfs"
+umount merged
+umount readwrite
+umount readonly
+
+echo "mounting new squashfs and making new manifest"
+mount newfilesystem.squashfs readonly -o loop,ro -t squashfs
+chroot readonly dpkg-query -W --showformat='${Package} ${Version}\n' > newfilesystem.manifest
+printf $(du -sx --block-size=1 readonly | cut -f1) > newfilesystem.size 
+
+echo "unmounting new squashfs and copying back to usb"
+umount readonly
+
+cp newfilesystem.squashfs ${usbpath}casper/filesystem.squashfs
+cp newfilesystem.size ${usbpath}casper/filesystem.size
+cp newfilesystem.manifest ${usbpath}casper/filesystem.manifest
+
+echo "resetting casper-rw"
+mkfs -t ext3 ${usbpath}casper-rw
+
+echo "cleaning up"
+cd /var/tmp
+rm -rf usblive
