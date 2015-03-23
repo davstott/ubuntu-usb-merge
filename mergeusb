@@ -1,8 +1,14 @@
 #!/bin/bash
+set -e; set -u
 
-if [ "$1" == "" ]
+if test $# -ne 1
   then
     echo "Usage $0 /path/to/mountedUSBDrive"
+    exit 1
+fi
+
+if ! which mksquashfs >/dev/null 2>&1; then
+    echo "mksquashfs is required, but was not found; please install mksquashfs-tools"
     exit 1
 fi
 
@@ -10,7 +16,6 @@ fi
 usbpath=$1/
 #check for root
 #look up disk space requirements from usb and check
-#check for mksquashfs and prompt to install squashfs-tools
 #option for making safer by copying from usb 1st to make a backup
 
 cd /var/tmp
