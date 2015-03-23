@@ -22,10 +22,10 @@ usblive=$(mktemp -d /var/tmp/usblive.XXXXXX)
 cd "${usblive}"
 mkdir readonly readwrite merged
 echo "Mounting ${usbpath}casper/filesystem.squashfs"
-mount ${usbpath}casper/filesystem.squashfs readonly -t squashfs -o loop,ro
+mount "${usbpath}"casper/filesystem.squashfs readonly -t squashfs -o loop,ro
 
 echo "Mounting ${usbpath}casper-rw"
-mount ${usbpath}casper-rw readwrite -o loop,rw
+mount "${usbpath}"casper-rw readwrite -o loop,rw
 echo "Mounting overlayfs"
 mount none merged -o lowerdir=readonly,upperdir=readwrite -t overlayfs
 echo "Making new squashfs"
@@ -44,12 +44,12 @@ printf $(du -sx --block-size=1 readonly | cut -f1) > newfilesystem.size
 echo "unmounting new squashfs and copying back to usb"
 umount readonly
 
-cp newfilesystem.squashfs ${usbpath}casper/filesystem.squashfs
-cp newfilesystem.size ${usbpath}casper/filesystem.size
-cp newfilesystem.manifest ${usbpath}casper/filesystem.manifest
+cp newfilesystem.squashfs "${usbpath}"casper/filesystem.squashfs
+cp newfilesystem.size "${usbpath}"casper/filesystem.size
+cp newfilesystem.manifest "${usbpath}"casper/filesystem.manifest
 
 echo "resetting casper-rw"
-mkfs -t ext3 ${usbpath}casper-rw
+mkfs -t ext3 "${usbpath}"casper-rw
 
 echo "cleaning up"
 cd /var/tmp
