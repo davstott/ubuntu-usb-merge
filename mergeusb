@@ -1,8 +1,14 @@
 #!/bin/bash
+set -e; set -u
 
-if [ "$1" == "" ]
+if test $# -ne 1
   then
     echo "Usage $0 /path/to/mountedUSBDrive"
+    exit 1
+fi
+
+if ! which mksquashfs >/dev/null 2>&1; then
+    echo "mksquashfs is required, but was not found; please install mksquashfs-tools"
     exit 1
 fi
 
@@ -10,18 +16,16 @@ fi
 usbpath=$1/
 #check for root
 #look up disk space requirements from usb and check
-#check for mksquashfs and prompt to install squashfs-tools
 #option for making safer by copying from usb 1st to make a backup
 
-cd /var/tmp
-mkdir usblive
-cd usblive
+usblive=$(mktemp -d /var/tmp/usblive.XXXXXX)
+cd "${usblive}"
 mkdir readonly readwrite merged
 echo "Mounting ${usbpath}casper/filesystem.squashfs"
-mount ${usbpath}casper/filesystem.squashfs readonly -t squashfs -o loop,ro
+mount "${usbpath}"casper/filesystem.squashfs readonly -t squashfs -o loop,ro
 
 echo "Mounting ${usbpath}casper-rw"
-mount ${usbpath}casper-rw readwrite -o loop,rw
+mount "${usbpath}"casper-rw readwrite -o loop,rw
 echo "Mounting overlayfs"
 mount none merged -o lowerdir=readonly,upperdir=readwrite -t overlayfs
 echo "Making new squashfs"
@@ -40,13 +44,13 @@ printf $(du -sx --block-size=1 readonly | cut -f1) > newfilesystem.size
 echo "unmounting new squashfs and copying back to usb"
 umount readonly
 
-cp newfilesystem.squashfs ${usbpath}casper/filesystem.squashfs
-cp newfilesystem.size ${usbpath}casper/filesystem.size
-cp newfilesystem.manifest ${usbpath}casper/filesystem.manifest
+cp newfilesystem.squashfs "${usbpath}"casper/filesystem.squashfs
+cp newfilesystem.size "${usbpath}"casper/filesystem.size
+cp newfilesystem.manifest "${usbpath}"casper/filesystem.manifest
 
 echo "resetting casper-rw"
-mkfs -t ext3 ${usbpath}casper-rw
+mkfs -t ext3 "${usbpath}"casper-rw
 
 echo "cleaning up"
 cd /var/tmp
-rm -rf usblive
+rm -rf "${usblive}"
