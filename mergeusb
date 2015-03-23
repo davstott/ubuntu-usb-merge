@@ -18,9 +18,8 @@ usbpath=$1/
 #look up disk space requirements from usb and check
 #option for making safer by copying from usb 1st to make a backup
 
-cd /var/tmp
-mkdir usblive
-cd usblive
+usblive=$(mktemp -d /var/tmp/usblive.XXXXXX)
+cd "${usblive}"
 mkdir readonly readwrite merged
 echo "Mounting ${usbpath}casper/filesystem.squashfs"
 mount ${usbpath}casper/filesystem.squashfs readonly -t squashfs -o loop,ro
@@ -54,4 +53,4 @@ mkfs -t ext3 ${usbpath}casper-rw
 
 echo "cleaning up"
 cd /var/tmp
-rm -rf usblive
+rm -rf "${usblive}"
