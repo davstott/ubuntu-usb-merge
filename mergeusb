@@ -24,6 +24,8 @@ mkdir readonly readwrite merged
 echo "Mounting ${usbpath}casper/filesystem.squashfs"
 mount "${usbpath}"casper/filesystem.squashfs readonly -t squashfs -o loop,ro
 
+echo "Checking ${usbpath}casper-rw"
+fsck ${usbpath}casper-rw
 echo "Mounting ${usbpath}casper-rw"
 mount "${usbpath}"casper-rw readwrite -o loop,rw
 echo "Mounting overlayfs"
